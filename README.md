@@ -33,3 +33,9 @@ Promo codes: `BRAAI10`, `WELCOME50`, `FREESHIP`. Free delivery over R750, otherw
 
 ## Before going live
 The payment provider is a **demo** that signs events through the real webhook path. You still need: a real payment gateway adapter (e.g. PayFast/Stripe), an email/SMS provider (outbox consumers are stubs), private object storage for documents, DB backups (or a server DB), email verification/MFA, and legal review of the template policy pages. Product images are hotlinked from Unsplash — replace with your own.
+
+## Deploy to Railway
+1. New Project → Deploy from GitHub repo → this repo (`railway.json` configures build/start).
+2. Add a **Volume** mounted at `/data`.
+3. Variables: `NODE_ENV=production`, `JWT_SECRET` (long random), `PAYMENT_WEBHOOK_SECRET` (long random), `DATABASE_FILE=/data/bekies.db`, `UPLOAD_DIR=/data/uploads`, `CLIENT_ORIGIN=https://<your-app>.up.railway.app`, `DEMO_MODE=true` (or `false` plus `ADMIN_EMAIL`/`ADMIN_PASSWORD`). Railway supplies `PORT`.
+4. Settings → Networking → Generate Domain.
