@@ -6,7 +6,7 @@
   "main": "src/index.js",
   "scripts": {
     "dev": "node --watch --no-warnings=ExperimentalWarning src/index.js",
-    "start": "node --no-warnings=ExperimentalWarning src/index.js",
+    "start": "node --experimental-sqlite --no-warnings=ExperimentalWarning src/index.js",
     "seed": "node --no-warnings=ExperimentalWarning src/db/seed-cli.js",
     "test": "node --no-warnings=ExperimentalWarning --test --test-concurrency=1 test/*.test.js"
   },

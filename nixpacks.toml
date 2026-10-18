@@ -1,5 +1,6 @@
 [variables]
 NIXPACKS_NODE_VERSION = "22"
+RAILPACK_NODE_VERSION = "22"
 NPM_CONFIG_PRODUCTION = "false"
 
 [phases.install]
