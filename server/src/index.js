@@ -9,8 +9,8 @@ const app = createApp();
 startOutboxWorker();
 setInterval(() => { try { expireStaleOrders(30); } catch (e) { console.error("[expire]", e); } }, 60_000).unref();
 
-const server = app.listen(config.port, () => {
-  console.log(`Bekies Braai Place API listening on http://localhost:${config.port}  (${config.isProd ? "production" : "development"})`);
+const server = app.listen(config.port, "0.0.0.0", () => {
+  console.log(`Bekies Braai Place API listening on 0.0.0.0:${config.port}  (${config.isProd ? "production" : "development"})`);
   if (config.demoMode) console.log("Demo mode ON — demo logins are listed on the sign-in page.");
 });
 const shutdown = () => server.close(() => process.exit(0));
