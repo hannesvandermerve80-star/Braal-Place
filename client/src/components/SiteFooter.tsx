@@ -210,15 +210,13 @@ export default function SiteFooter({ compact = false }: { compact?: boolean }) {
           </div>
           <div className="support-item">
             <span><FooterIcon name="pin" /></span>
-            <p><strong>8 Rose Street, Cape Town CBD</strong><small>State House Building<br />Cape Town, 8001</small></p>
+            <p><strong>Johannesburg &amp; Pretoria</strong><small>Chilled delivery across Gauteng<br />South Africa</small></p>
           </div>
           <div className="payment-section">
             <h3>Payment Methods</h3>
-            <div aria-label="Visa, Mastercard, Apple Pay, PayPal and EFT">
+            <div aria-label="Visa, Mastercard and instant EFT">
               <b className="visa">VISA</b>
               <b className="mastercard"><i /><i /></b>
-              <b className="apple">●Pay</b>
-              <b className="paypal">P <span>PayPal</span></b>
               <b className="eft"><span>⌂</span><small>EFT</small></b>
             </div>
           </div>

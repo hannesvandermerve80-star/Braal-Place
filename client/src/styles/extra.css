@@ -180,3 +180,43 @@ a.portal-primary, a.portal-filter { text-decoration: none; display: inline-flex;
 .task-panel > a > button { border: 0; border-bottom: 1px solid #edf0ed; background: white; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; text-align: left; padding: 14px 0; color: #254236; cursor: pointer; }
 .task-panel > a > button > span { width: 31px; height: 31px; display: grid; place-items: center; color: #0b6845; background: #e8f3ed; border-radius: 9px; font-size: 11px; font-weight: 800; }
 .task-panel > a > button strong { font-size: 12px; font-weight: 600; }
+
+/* ---------- footer polish ---------- */
+.bekies-footer .footer-main { height: auto; min-height: 480px; padding-bottom: 48px; grid-template-columns: 1.2fr .85fr 1.4fr .95fr 1.1fr; }
+.bekies-footer .footer-bottom { height: 76px; }
+.bekies-footer .support-item strong { font-size: 14px; overflow-wrap: normal; word-break: normal; white-space: nowrap; }
+.bekies-footer .support-item p { min-width: 0; }
+.bekies-footer .footer-link-group button { white-space: nowrap; }
+.bekies-footer .footer-link-group button:focus-visible,
+.bekies-footer .footer-legal button:focus-visible,
+.bekies-footer .social-links a:focus-visible { outline: 2px solid #ffb210; outline-offset: 3px; border-radius: 6px; }
+.bekies-footer .social-links a { transition: transform .15s ease, background .15s ease; }
+.bekies-footer .social-links a:hover { transform: translateY(-2px); background: #ff6c09; }
+.bekies-footer .footer-legal button { color: rgba(255,255,255,.85); }
+.bekies-footer .footer-legal button:hover { color: #fff; text-decoration: underline; }
+.bekies-footer .footer-ribbon.bottom { height: 64px; }
+.bekies-footer .footer-ribbon.bottom::after { height: 56px; bottom: -34px; }
+.bekies-footer .payment-section > div { gap: 10px; }
+
+/* compact (portal) footer */
+.bekies-footer.compact { padding: 16px 24px; gap: 16px; box-shadow: 0 1px 2px rgba(10,40,25,.04); }
+.bekies-footer.compact .compact-brand strong { font-size: 13px; }
+.bekies-footer.compact .compact-brand small { font-size: 11px; color: #5d6d63; }
+.bekies-footer.compact .compact-links { gap: 22px; }
+.bekies-footer.compact .compact-links button { font-size: 12px; color: #4b5d52; cursor: pointer; }
+.bekies-footer.compact .compact-links button:hover { color: #0b6845; text-decoration: underline; }
+.bekies-footer.compact > p { font-size: 11px; color: #5d6d63; }
+@media (max-width: 760px) {
+  .bekies-footer.compact { grid-template-columns: 1fr; justify-items: start; }
+  .bekies-footer.compact .compact-links { justify-self: start; flex-wrap: wrap; }
+}
+@media (max-width: 1250px) {
+  .bekies-footer .support-item strong { white-space: normal; overflow-wrap: anywhere; }
+  .bekies-footer .footer-main { height: auto; }
+}
+@media (max-width: 720px) {
+  .bekies-footer .footer-ribbon.bottom { height: 36px; }
+  .bekies-footer .payment-section { margin-top: 22px; }
+}
+.bekies-footer .footer-motto { margin-left: 0; gap: 12px; font-size: 15px; }
+.bekies-footer .footer-motto i { flex: none; }
