@@ -28,6 +28,22 @@ export function queueEmail({ to, subject, text, html, key = null }) {
   run("INSERT OR IGNORE INTO emails (dedupe_key, to_addr, subject, text_body, html_body) VALUES (?,?,?,?,?)", key, to, subject, text, html ?? null);
 }
 
+/** Resend (https://resend.com) over its HTTPS API. The email row id is the idempotency key, so a retry never double-sends. */
+async function sendViaResend(m) {
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${config.resend.apiKey}`, "Content-Type": "application/json", "Idempotency-Key": `bekies-email-${m.id}` },
+    body: JSON.stringify({ from: config.resend.from, to: [m.to_addr], subject: m.subject, text: m.text_body, html: m.html_body ?? undefined }),
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`Resend ${res.status}: ${detail.slice(0, 200)}`);
+  }
+}
+
+export const emailProvider = () => (config.resend ? "resend" : config.smtp ? "smtp" : "log");
+
 let transport;
 const getTransport = () => {
   if (!config.smtp) return null;
@@ -47,8 +63,9 @@ export async function processEmails(limit = 50) {
     const due = all("SELECT * FROM emails WHERE status='pending' AND next_attempt_at <= datetime('now') ORDER BY id LIMIT ?", limit);
     for (const m of due) {
       try {
-        const t = getTransport();
-        if (t) await t.sendMail({ from: config.smtp.from, to: m.to_addr, subject: m.subject, text: m.text_body, html: m.html_body ?? undefined });
+        const t = config.resend ? null : getTransport();
+        if (config.resend) await sendViaResend(m);
+        else if (t) await t.sendMail({ from: config.smtp.from, to: m.to_addr, subject: m.subject, text: m.text_body, html: m.html_body ?? undefined });
         else if (!config.isTest) console.log(`[email:not-sent — SMTP not configured] to=${m.to_addr} subject="${m.subject}"\n${m.text_body}\n`);
         run("UPDATE emails SET status='sent', sent_at=datetime('now') WHERE id=?", m.id);
       } catch (err) {

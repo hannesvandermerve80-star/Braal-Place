@@ -26,6 +26,7 @@ export const config = {
   get paymentProvider() { return this.payfast ? "payfast" : (this.demoMode || !this.isProd) ? "demo" : "none"; },
   demoMode: (env.DEMO_MODE ?? "true") === "true",
   publicUrl: (env.PUBLIC_URL || (env.CLIENT_ORIGIN || "http://localhost:5173").split(",")[0]).trim().replace(/\/$/, ""),
+  resend: env.RESEND_API_KEY ? { apiKey: env.RESEND_API_KEY, from: env.MAIL_FROM || "Bekies Braai Place <onboarding@resend.dev>" } : null,
   smtp: env.SMTP_HOST ? {
     host: env.SMTP_HOST,
     port: Number(env.SMTP_PORT || 587),

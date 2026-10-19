@@ -2,14 +2,15 @@ import { createApp } from "./app.js";
 import { config } from "./config.js";
 import { seedIfEmpty } from "./db/seed.js";
 import { startOutboxWorker } from "./services/outbox.js";
-import { startEmailWorker } from "./services/mailer.js";
+import { emailProvider, startEmailWorker } from "./services/mailer.js";
 import { expireStaleOrders } from "./services/orders.js";
 
 seedIfEmpty();
 const app = createApp();
 startOutboxWorker();
 startEmailWorker();
-if (!config.smtp) console.warn("[email] SMTP_HOST not set — emails are logged, not delivered. Set SMTP_* variables before going live.");
+console.log(`[email] provider: ${emailProvider()}`);
+if (!config.resend && !config.smtp) console.warn("[email] No RESEND_API_KEY or SMTP_HOST set — emails are logged, not delivered. Set one before going live.");
 setInterval(() => { try { expireStaleOrders(30); } catch (e) { console.error("[expire]", e); } }, 60_000).unref();
 
 const server = app.listen(config.port, "0.0.0.0", () => {
