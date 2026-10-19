@@ -75,10 +75,13 @@ export function createApp() {
   app.use("/api", supportRoutes);
   app.use("/api", notFoundHandler);
 
+  // Public product photos (the private documents folder is never exposed — only /public below it)
+  app.use("/uploads", express.static(path.join(config.uploadDir, "public"), { maxAge: config.isProd ? "7d" : 0, index: false, dotfiles: "deny" }));
+
   // Serve the built React app (production) with SPA fallback
   if (fs.existsSync(path.join(config.clientDist, "index.html"))) {
     app.use(express.static(config.clientDist, { maxAge: config.isProd ? "1h" : 0, index: false }));
-    app.get(/^\/(?!api\/).*/, (_req, res) => res.sendFile(path.join(config.clientDist, "index.html")));
+    app.get(/^\/(?!api\/|uploads\/).*/, (_req, res) => res.sendFile(path.join(config.clientDist, "index.html")));
   }
 
   app.use(notFoundHandler);

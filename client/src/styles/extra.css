@@ -220,3 +220,41 @@ a.portal-primary, a.portal-filter { text-decoration: none; display: inline-flex;
 }
 .bekies-footer .footer-motto { margin-left: 0; gap: 12px; font-size: 15px; }
 .bekies-footer .footer-motto i { flex: none; }
+
+/* ---------- invoice ---------- */
+.invoice-page { max-width: 860px; margin: 0 auto; padding: 24px 20px 60px; }
+.invoice-actions { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+.invoice-actions button { border: 0; border-radius: 999px; background: #0b6845; color: #fff; font-weight: 700; padding: 11px 22px; cursor: pointer; }
+.invoice { background: #fff; border: 1px solid #e0e5e1; border-radius: 14px; padding: 36px; color: #1c2b22; }
+.invoice > header { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #0b6845; padding-bottom: 20px; flex-wrap: wrap; }
+.invoice h1 { margin: 0 0 8px; font-size: 28px; color: #0b6845; }
+.invoice header p { margin: 0; color: #5d6d63; line-height: 1.6; font-size: 14px; }
+.invoice dl { display: grid; grid-template-columns: auto auto; gap: 6px 18px; margin: 0; font-size: 14px; }
+.invoice dt { color: #5d6d63; } .invoice dd { margin: 0; font-weight: 600; text-align: right; }
+.invoice-to { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 24px 0; }
+.invoice-to h3 { margin: 0 0 6px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #5d6d63; }
+.invoice-to p { margin: 0; line-height: 1.6; font-size: 14px; }
+.invoice table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.invoice th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #5d6d63; padding: 8px 6px; border-bottom: 1px solid #cdd6cf; }
+.invoice td { padding: 10px 6px; border-bottom: 1px solid #eef1ee; vertical-align: top; }
+.invoice td small { display: block; color: #8d9891; font-size: 11px; }
+.invoice .num { text-align: right; }
+.invoice-totals { margin: 22px 0 0 auto !important; width: min(340px, 100%); }
+.invoice-totals .grand { font-size: 18px; color: #0b6845; border-top: 2px solid #0b6845; padding-top: 8px; font-weight: 800; }
+.invoice .invoice-note { margin-top: 28px; color: #5d6d63; font-size: 12px; }
+@media (max-width: 640px) { .invoice { padding: 20px; } .invoice-to { grid-template-columns: 1fr; } .invoice table { font-size: 12px; } }
+@media print {
+  .no-print, .commerce-header, .bekies-footer, header.commerce-header { display: none !important; }
+  .invoice { border: 0; padding: 0; }
+  body { background: #fff !important; }
+}
+
+/* ---------- misc ---------- */
+.form-notice { margin: 10px 0; padding: 10px 14px; border-radius: 10px; background: #e8f3ed; color: #0b5b3a; font-size: 14px; }
+.forgot-link, .link-btn { border: 0; background: none; color: #0b6845; text-decoration: underline; cursor: pointer; font: inherit; padding: 0; }
+.forgot-link { display: block; margin: 14px auto 0; font-size: 14px; }
+.image-upload > span { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.image-upload > div { display: flex; align-items: center; gap: 14px; }
+.image-upload img, .image-upload-empty { width: 84px; height: 84px; border-radius: 12px; object-fit: cover; background: #eef2ee; display: grid; place-items: center; color: #8d9891; font-size: 11px; text-align: center; }
+.image-upload small { color: #68776e; display: block; margin-top: 6px; }
+.tracking-page .secondary { display: inline-block; text-decoration: none; }

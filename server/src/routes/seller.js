@@ -1,3 +1,8 @@
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+import multer from "multer";
+import { config } from "../config.js";
 import { Router } from "express";
 import { z } from "zod";
 import { all, one, run } from "../db/index.js";
@@ -26,6 +31,25 @@ router.use((req, _res, next) => {
   next();
 });
 
+/** Product photos: validated by magic bytes, stored under the public uploads folder with a random name. */
+const PUBLIC_PRODUCTS = path.join(config.uploadDir, "public", "products");
+fs.mkdirSync(PUBLIC_PRODUCTS, { recursive: true });
+const imageUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 3 * 1024 * 1024, files: 1 } });
+const IMAGE_TYPES = [
+  { ext: "jpg", test: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
+  { ext: "png", test: (b) => b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) },
+  { ext: "webp", test: (b) => b.subarray(0, 4).toString() === "RIFF" && b.subarray(8, 12).toString() === "WEBP" },
+];
+router.post("/uploads/image", imageUpload.single("file"), wrap((req, res) => {
+  if (!req.file) throw badRequest("Choose an image to upload");
+  const type = IMAGE_TYPES.find((t) => t.test(req.file.buffer));
+  if (!type) throw badRequest("Only JPG, PNG or WebP images up to 3 MB are accepted");
+  const name = `${crypto.randomBytes(14).toString("hex")}.${type.ext}`;
+  fs.writeFileSync(path.join(PUBLIC_PRODUCTS, name), req.file.buffer, { mode: 0o644 });
+  audit(req, "seller.image.uploaded", "store", req.store.id, { name });
+  res.status(201).json({ url: `/uploads/products/${name}` });
+}));
+
 const serializeStore = (s) => ({ id: s.id, slug: s.slug, name: s.name, description: s.description, city: s.city, supportEmail: s.support_email, verified: !!s.verified, rating: s.rating, status: s.status });
 
 router.get("/store", (req, res) => res.json({ store: serializeStore(req.store) }));
@@ -44,7 +68,7 @@ const productBase = z.object({
   unit: z.string().trim().max(20).default("each"),
   price: z.number().positive("Price must be greater than 0").max(100000),
   oldPrice: z.number().positive().max(100000).nullable().optional(),
-  image: z.string().url().max(500).nullable().optional(),
+  image: z.string().max(500).refine((u) => /^https:\/\//.test(u) || /^\/uploads\/products\/[\w-]+\.(jpg|png|webp)$/.test(u), "Use an uploaded image or an https image link").nullable().optional(),
   stock: z.number().int().min(0).max(100000).default(0),
   lowStockThreshold: z.number().int().min(0).max(10000).default(10),
 });

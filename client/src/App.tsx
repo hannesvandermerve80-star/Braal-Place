@@ -1,3 +1,5 @@
+import CheckoutReturn from "./pages/CheckoutReturn";
+import Invoice from "./pages/Invoice";
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import CommerceLayout from "./components/CommerceLayout";
@@ -32,6 +34,8 @@ export default function App() {
         <Route element={<Checkout />} path="/checkout" />
         <Route element={<TrackLookup />} path="/track" />
         <Route element={<Track />} path="/track/:number" />
+        <Route element={<CheckoutReturn />} path="/checkout/return/:number" />
+        <Route element={<Invoice />} path="/invoice/:number" />
         <Route element={<Account />} path="/account" />
         <Route element={<SellerApply />} path="/sell" />
         <Route element={<Help />} path="/help" />

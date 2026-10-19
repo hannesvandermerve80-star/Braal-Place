@@ -218,6 +218,7 @@ export function seedDemo() {
   run("UPDATE order_events SET created_at = (SELECT created_at FROM orders o WHERE o.id = order_events.order_id)");
   run("UPDATE ledger_entries SET created_at = (SELECT created_at FROM orders o WHERE o.id = ledger_entries.order_id)");
   processOutbox(500);
+  run("DELETE FROM emails"); // seeded history must never be emailed (demo addresses)
   // Seeded notifications shouldn't all show as unread
   run("UPDATE notifications SET read=1 WHERE id % 3 != 0");
 }

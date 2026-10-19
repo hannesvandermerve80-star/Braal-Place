@@ -1,4 +1,5 @@
 import { all, one, run, tx } from "../db/index.js";
+import { sendOrderPaid, sendOrderStatus, sendRefund, sendSellerDecision } from "./emailTemplates.js";
 
 /** Publish a domain event. Call inside the same tx as the state change. */
 export function publish(type, payload) {
@@ -41,6 +42,22 @@ const consumers = {
   "support.created": (e, p) => adminsAndManagers().forEach((u) => notify(u.id, e.type, "New support request", p.subject, "/portal/support", e.id)),
 };
 
+/** Email side-effects of the same events. Queued transactionally; delivered by the email worker. */
+const orderCtx = (number) => {
+  const order = one("SELECT * FROM orders WHERE number=?", number);
+  return order ? { order, contact: JSON.parse(order.contact), address: JSON.parse(order.address) } : null;
+};
+const emailConsumers = {
+  "payment.confirmed": (e, p) => {
+    const c = orderCtx(p.number);
+    if (c) sendOrderPaid(c.order, all("SELECT name, qty, line_total_cents FROM order_items WHERE order_id=?", c.order.id), c.contact, c.address);
+  },
+  "order.status_changed": (e, p) => { const c = orderCtx(p.number); if (c) sendOrderStatus(c.order, p.status, c.contact); },
+  "refund.completed": (e, p) => { const c = orderCtx(p.number); if (c) sendRefund(c.order, p.amountCents, c.contact); },
+  "seller.approved": (e, p) => { const u = one("SELECT * FROM users WHERE id=?", p.userId); if (u) sendSellerDecision(u, true); },
+  "seller.rejected": (e, p) => { const u = one("SELECT * FROM users WHERE id=?", p.userId); if (u) sendSellerDecision(u, false, p.note); },
+};
+
 const MAX_ATTEMPTS = 5;
 
 /** Process due events once. Failed events retry with bounded exponential backoff. */
@@ -51,6 +68,7 @@ export function processOutbox(limit = 50) {
       tx(() => {
         const handler = consumers[evt.type];
         if (handler) handler(evt, JSON.parse(evt.payload));
+        emailConsumers[evt.type]?.(evt, JSON.parse(evt.payload));
         run("UPDATE outbox SET status='done', processed_at=datetime('now') WHERE id=?", evt.id);
       });
     } catch (err) {

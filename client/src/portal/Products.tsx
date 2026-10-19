@@ -27,6 +27,21 @@ function ProductForm({ product, categories, onClose, onSaved }: { product: Produ
     <label className={errors[k] ? "has-error" : ""}>{label}<input onChange={(e) => set(k)(e.target.value)} value={String(f[k])} {...props} />{errors[k] && <em className="field-error">{errors[k]}</em>}</label>
   );
   void run; void busy;
+  const [uploading, setUploading] = useState(false);
+  const upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true); setFormError("");
+    try {
+      const body = new FormData(); body.append("file", file);
+      const res = await fetch("/api/seller/uploads/image", { method: "POST", body, credentials: "include" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error?.message ?? "Upload failed");
+      set("image")(json.url);
+    } catch (err) { setFormError(err instanceof Error ? err.message : "Upload failed"); }
+    finally { setUploading(false); }
+  };
   return (
     <Modal onClose={onClose} title={product ? "Edit product" : "Add product"}>
       <form className="pf" noValidate onSubmit={save}>
@@ -41,7 +56,17 @@ function ProductForm({ product, categories, onClose, onSaved }: { product: Produ
           {row("Stock on hand", "stock", { inputMode: "numeric" })}
           {row("Low-stock alert at", "lowStockThreshold", { inputMode: "numeric" })}
         </div>
-        {row("Image URL (https)", "image", { placeholder: "https://…", type: "url" })}
+        <div className="image-upload">
+          <span>Product photo</span>
+          <div>
+            {f.image ? <img alt="" src={f.image} /> : <div className="image-upload-empty">No photo yet</div>}
+            <label className="portal-filter">{uploading ? "Uploading…" : f.image ? "Replace photo" : "Upload photo"}
+              <input accept="image/jpeg,image/png,image/webp" disabled={uploading} hidden onChange={upload} type="file" />
+            </label>
+          </div>
+          <small>JPG, PNG or WebP, up to 3 MB. Square photos look best.</small>
+          {errors.image && <em className="field-error">{errors.image}</em>}
+        </div>
         {formError && <p className="form-error" role="alert">{formError}</p>}
         <p className="muted">New products start as a draft. Submit them for moderation when ready — name, description, category or photo edits to live products are re-reviewed.</p>
         <div className="modal-actions"><button className="portal-filter" onClick={onClose} type="button">Cancel</button><button className="portal-primary" type="submit">{product ? "Save changes" : "Create draft"}</button></div>

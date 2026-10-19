@@ -59,3 +59,11 @@ export const webhook = async (c, event, { sign = true, signature } = {}) => {
   return c.post("/payments/webhooks/demo", event, { raw, headers: { "x-signature": signature ?? (sign ? signPayload(raw) : "") } });
 };
 export const productId = (slug) => dbm.one("SELECT id FROM products WHERE slug=?", slug).id;
+
+/** Guest buyer with a fresh pending order of one sauce + one braai box. */
+export async function quickOrder() {
+  const c = client();
+  const r = await placeOrder(c, [[productId("smoky-braai-sauce"), 2], [productId("family-braai-box"), 1]]);
+  if (r.status !== 201) throw new Error(`order failed ${r.status} ${JSON.stringify(r.body)}`);
+  return { order: r.body.order, c };
+}

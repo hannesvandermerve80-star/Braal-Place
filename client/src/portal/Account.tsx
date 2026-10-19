@@ -114,7 +114,7 @@ export function AccountSettings() {
             <label>First name<input onChange={(e) => setP({ ...p, firstName: e.target.value })} required value={p.firstName} /></label>
             <label>Last name<input onChange={(e) => setP({ ...p, lastName: e.target.value })} required value={p.lastName} /></label>
             <label className={pe.mobile ? "has-error" : ""}>Mobile<input onChange={(e) => setP({ ...p, mobile: e.target.value })} value={p.mobile} />{pe.mobile && <em className="field-error">{pe.mobile}</em>}</label>
-            <label>Email<input disabled value={user!.email} /></label>
+            <label>Email<input disabled value={user!.email} />{user!.emailVerified === false && <em className="field-error">Not confirmed yet — <button className="link-btn" onClick={async (e) => { e.preventDefault(); try { await api.post("/auth/resend-verification", {}); toast("Confirmation email sent"); } catch { toast("Could not send right now"); } }} type="button">resend link</button></em>}</label>
           </div>
           <div className="modal-actions"><button className="portal-primary" type="submit">Save profile</button></div>
         </form>

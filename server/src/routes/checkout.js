@@ -2,11 +2,12 @@ import { Router } from "express";
 import { z } from "zod";
 import { all, one, run, tx } from "../db/index.js";
 import { validate } from "../middleware/validate.js";
-import { badRequest, wrap } from "../lib/httpError.js";
+import { badRequest, HttpError, wrap } from "../lib/httpError.js";
 import { addressSchema, contactSchema } from "../lib/validators.js";
 import { cartView, resolveCart } from "../services/cart.js";
 import { createOrder, serializeOrder } from "../services/orders.js";
 import { audit } from "../services/audit.js";
+import { config } from "../config.js";
 
 const router = Router();
 
@@ -24,6 +25,7 @@ const orderSchema = z.object({
 });
 
 router.post("/orders", validate(orderSchema), wrap((req, res) => {
+  if (config.paymentProvider === "none") throw new HttpError(503, "Online payments are not available yet. Please try again later.");
   const cart = resolveCart(req, res, { create: false });
   if (!cart) throw badRequest("Your cart is empty");
   const items = all("SELECT product_id AS productId, qty FROM cart_items WHERE cart_id=?", cart.id).map((r) => ({ ...r }));

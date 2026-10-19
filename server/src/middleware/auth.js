@@ -29,7 +29,8 @@ export function attachUser(req, _res, next) {
     try {
       const payload = jwt.verify(token, config.jwtSecret);
       const user = one("SELECT * FROM users WHERE id = ?", payload.sub);
-      if (user && user.status === "active") req.user = user;
+      const cutoff = user?.sessions_valid_after ? Math.floor(new Date(user.sessions_valid_after.replace(" ", "T") + "Z").getTime() / 1000) : 0;
+      if (user && user.status === "active" && (payload.iat ?? 0) >= cutoff) req.user = user;
     } catch { /* invalid/expired token -> anonymous */ }
   }
   next();
@@ -67,6 +68,7 @@ export function publicUser(u) {
     firstName: u.first_name,
     lastName: u.last_name,
     mobile: u.mobile,
+    emailVerified: !!u.email_verified,
     role: u.role,
     status: u.status,
     permissions: permissionsFor(u),

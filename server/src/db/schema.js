@@ -229,6 +229,31 @@ CREATE TABLE IF NOT EXISTS webhook_events (
   PRIMARY KEY (provider, provider_event_id)
 );
 
+CREATE TABLE IF NOT EXISTS user_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('password_reset','email_verify')),
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at TEXT NOT NULL,
+  used_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS emails (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  dedupe_key TEXT UNIQUE,
+  to_addr TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  text_body TEXT NOT NULL,
+  html_body TEXT,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','sent','failed')),
+  attempts INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT,
+  next_attempt_at TEXT NOT NULL DEFAULT (datetime('now')),
+  sent_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS refunds (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   payment_id INTEGER NOT NULL REFERENCES payments(id),

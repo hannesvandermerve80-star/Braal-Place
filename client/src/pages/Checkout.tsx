@@ -14,7 +14,8 @@ const blank = { firstName: "", lastName: "", email: "", mobile: "", street: "", 
 export default function Checkout() {
   useTitle("Checkout");
   const nav = useNavigate();
-  const { user } = useAuth();
+  const { user, meta } = useAuth();
+  const provider = meta?.paymentProvider ?? "demo";
   const { cart, reload } = useCart();
   const [f, setF] = useState(blank);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -38,7 +39,18 @@ export default function Checkout() {
     }).catch(() => {});
   }, [user]);
 
+  const payWithPayFast = async (order: Order) => {
+    const r = await api.post<{ action: string; fields: Record<string, string> }>("/payments/payfast/init", { orderNumber: order.number, email: f.email });
+    try { sessionStorage.setItem("bekies_guest_email", f.email); } catch { /* optional */ }
+    const form = document.createElement("form");
+    form.method = "POST"; form.action = r.action;
+    for (const [k, v] of Object.entries(r.fields)) { const i = document.createElement("input"); i.type = "hidden"; i.name = k; i.value = v; form.appendChild(i); }
+    document.body.appendChild(form);
+    form.submit();
+  };
+
   const pay = async (order: Order) => {
+    if (provider === "payfast") return payWithPayFast(order);
     const r = await api.post<{ order: Order }>("/payments/demo/pay", { orderNumber: order.number, email: f.email, outcome: method });
     if (r.order.paymentStatus === "confirmed") { setDone(r.order); setPendingOrder(null); await reload(); window.scrollTo({ top: 0 }); }
     else { setPendingOrder(r.order); setFormError("Your payment was declined. No money was taken — try again or use a different payment method."); }
@@ -96,7 +108,8 @@ export default function Checkout() {
   return (
     <main className="commerce-main checkout-page">
       <div className="checkout-head"><button onClick={() => nav("/cart")} type="button"><Icon name="back" /> Cart</button><div><span>Secure checkout</span><h1>Delivery &amp; payment</h1></div></div>
-      <div className="prototype-notice"><strong>Test payments</strong><span>No payment provider is connected yet — payments run through a demo provider and no real money is ever taken. Never enter real card details.</span></div>
+      {provider === "none" && <div className="prototype-notice"><strong>Payments unavailable</strong><span>Online payments are being set up. Please check back soon.</span></div>}
+      {provider === "demo" && <div className="prototype-notice"><strong>Test payments</strong><span>No payment provider is connected yet — payments run through a demo provider and no real money is ever taken. Never enter real card details.</span></div>}
       {!user && <p className="guest-note">Checking out as a guest. <Link to="/account?next=/checkout">Sign in</Link> to save addresses and track orders in your account.</p>}
       <form className="checkout-layout" noValidate onSubmit={submit}>
         <section className="checkout-forms">
@@ -127,10 +140,11 @@ export default function Checkout() {
             {user && <label className="consent"><input checked={saveAddress} onChange={(e) => setSaveAddress(e.target.checked)} type="checkbox" /> Save this address to my account</label>}
           </article>
           <article>
-            <div className="form-section-head"><span>3</span><div><h2>Payment method</h2><p>Test mode — nothing is charged</p></div></div>
-            <label className="payment-option"><input checked={method === "success"} name="payment" onChange={() => setMethod("success")} type="radio" /><span><strong>Demo card payment</strong><small>Always succeeds · no funds processed</small></span><b>DEMO</b></label>
+            <div className="form-section-head"><span>3</span><div><h2>Payment method</h2><p>{provider === "payfast" ? "You'll complete payment securely on PayFast" : "Test mode — nothing is charged"}</p></div></div>
+            {provider === "payfast" && <label className="payment-option"><input checked readOnly name="payment" type="radio" /><span><strong>Pay securely with PayFast</strong><small>Visa, Mastercard, Instant EFT and more · card details never touch our servers</small></span><b>SECURE</b></label>}
+            {provider === "demo" && <><label className="payment-option"><input checked={method === "success"} name="payment" onChange={() => setMethod("success")} type="radio" /><span><strong>Demo card payment</strong><small>Always succeeds · no funds processed</small></span><b>DEMO</b></label>
             <label className="payment-option"><input checked={method === "decline"} name="payment" onChange={() => setMethod("decline")} type="radio" /><span><strong>Demo card — simulate a decline</strong><small>Lets you test the failed-payment flow</small></span><b>TEST</b></label>
-            <label className="payment-option"><input disabled name="payment" type="radio" /><span><strong>Instant EFT</strong><small>Provider not connected</small></span></label>
+            <label className="payment-option"><input disabled name="payment" type="radio" /><span><strong>Instant EFT</strong><small>Provider not connected</small></span></label></>}
           </article>
         </section>
         <aside className="order-summary checkout-summary">
@@ -141,7 +155,7 @@ export default function Checkout() {
           {totals.discount > 0 && <div><span>Discount</span><strong className="discount">−{money(totals.discount)}</strong></div>}
           <div className="summary-total"><span>Total</span><strong>{money(totals.total)}</strong></div>
           {formError && <p className="form-error" role="alert">{formError}</p>}
-          <button disabled={placing} type="submit">{placing ? "Processing…" : pendingOrder ? `Retry payment · ${money(totals.total)}` : `Place order · ${money(totals.total)}`}</button>
+          <button disabled={placing || provider === "none"} type="submit">{placing ? "Processing…" : pendingOrder ? `Retry payment · ${money(totals.total)}` : provider === "payfast" ? `Pay ${money(totals.total)} securely` : `Place order · ${money(totals.total)}`}</button>
           <p>By continuing you accept our <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy Policy</Link>.</p>
         </aside>
       </form>

@@ -10,6 +10,13 @@ export const db = new DatabaseSync(config.databaseFile);
 db.exec("PRAGMA journal_mode = WAL;");
 db.exec(schema);
 
+/** Lightweight forward-only migrations for databases created by an earlier version. */
+function ensureColumn(table, column, ddl) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all();
+  if (!cols.some((c) => c.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${ddl}`);
+}
+ensureColumn("users", "sessions_valid_after", "TEXT");
+
 /** Run fn inside a transaction (rolls back on throw). Supports nesting through savepoints. */
 let depth = 0;
 export function tx(fn) {

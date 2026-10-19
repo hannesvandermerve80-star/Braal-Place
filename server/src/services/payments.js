@@ -96,6 +96,21 @@ export function demoCharge(order, outcome, req) {
   return handleProviderEvent("demo", JSON.parse(body), req);
 }
 
+/** Open (or reuse) a payment attempt for an order with the given provider. */
+export function ensurePaymentAttempt(order, provider) {
+  if (order.payment_status === "confirmed") throw conflict("This order is already paid");
+  if (order.status === "cancelled") throw conflict("This order was cancelled");
+  return tx(() => {
+    let payment = one("SELECT * FROM payments WHERE order_id=? AND provider=? AND status IN ('initiated','pending') ORDER BY id DESC LIMIT 1", order.id, provider);
+    if (!payment) {
+      run("INSERT INTO payments (order_id, provider, provider_ref, amount_cents, status) VALUES (?,?,?,?,?)", order.id, provider, `${provider === "payfast" ? "pf" : "pay"}_${crypto.randomBytes(9).toString("hex")}`, order.total_cents, "initiated");
+      run("UPDATE orders SET payment_status='initiated' WHERE id=?", order.id);
+      payment = one("SELECT * FROM payments WHERE order_id=? ORDER BY id DESC LIMIT 1", order.id);
+    }
+    return payment;
+  });
+}
+
 /* ------------------------------------------------------------------ refunds */
 export function requestRefund({ req, order, amountCents, reason }) {
   return tx(() => {

@@ -40,6 +40,8 @@ router.get("/meta/site", (_req, res) => {
     freeDeliveryThreshold: config.commerce.freeDeliveryThresholdCents / 100,
     deliveryFee: config.commerce.deliveryFeeCents / 100,
     demoMode: config.demoMode,
+    paymentProvider: config.paymentProvider,
+    emailEnabled: !!config.smtp,
     demoAccounts: config.demoMode ? [
       { role: "admin", label: "Super Admin", email: "admin@bekies.test", password: "Admin123!" },
       { role: "manager", label: "Operations Manager", email: "manager@bekies.test", password: "Manager123!" },

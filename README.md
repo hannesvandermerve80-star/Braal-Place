@@ -31,6 +31,13 @@ Promo codes: `BRAAI10`, `WELCOME50`, `FREESHIP`. Free delivery over R750, otherw
 - **Portals** (`/portal`): role-specific overview, orders (state machine, seller sub-orders), products + moderation, inventory, payouts, payments/refunds, users & roles with granular permissions, audit log, support tickets, addresses, store/account settings.
 - **Backend rules**: atomic stock reservation, HMAC-signed idempotent payment webhooks (a browser redirect never confirms payment), ledger with 10% commission, refunds needing permission + password re-entry, append-only audit log, transactional outbox for notifications, helmet/CORS/rate limits, httpOnly JWT cookie.
 
+## Going live checklist
+1. **Set `DEMO_MODE=false`** and `ADMIN_EMAIL` / `ADMIN_PASSWORD` — this seeds only categories + promo codes and creates your first admin (change the password after first sign-in). No demo accounts or fake orders.
+2. **Email** — set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` (any SMTP provider). Used for password resets, email confirmation, receipts, dispatch/delivery notices, refunds and seller decisions. Failed sends retry with backoff. Check `GET /api/health` and the `emails` table for `failed` rows.
+3. **Payments** — create a PayFast merchant account, set `PAYFAST_MERCHANT_ID`, `PAYFAST_MERCHANT_KEY`, `PAYFAST_PASSPHRASE` and `PAYFAST_SANDBOX=false`. Set `PUBLIC_URL` to your public https address — PayFast calls `PUBLIC_URL/api/payments/payfast/itn`, so it must be reachable from the internet. Orders are only marked paid after PayFast's signed notification passes signature, merchant, amount and PayFast-postback checks; the browser redirect never confirms payment. If neither PayFast nor `DEMO_MODE` is on in production, checkout is disabled rather than accepting unpaid orders.
+4. **Storage** — mount a persistent volume for `DATABASE_FILE` and `UPLOAD_DIR` and back it up. Product photos live in `UPLOAD_DIR/public`; seller verification documents stay private in `UPLOAD_DIR`.
+5. **Business details** — update phone/email/address in `client/src/siteConfig.ts` and `server/src/config.js`, and have the policy pages (`client/src/pages/Content.tsx`) reviewed by a lawyer. Set payout banking details process (payouts are recorded in the ledger; the actual EFT to sellers is manual).
+
 ## Before going live
 The payment provider is a **demo** that signs events through the real webhook path. You still need: a real payment gateway adapter (e.g. PayFast/Stripe), an email/SMS provider (outbox consumers are stubs), private object storage for documents, DB backups (or a server DB), email verification/MFA, and legal review of the template policy pages. Product images are hotlinked from Unsplash — replace with your own.
 

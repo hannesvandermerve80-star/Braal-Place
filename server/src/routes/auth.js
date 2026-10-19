@@ -9,6 +9,8 @@ import { validate } from "../middleware/validate.js";
 import { conflict, unauthorized, wrap, badRequest } from "../lib/httpError.js";
 import { email, mobile, password, str } from "../lib/validators.js";
 import { audit } from "../services/audit.js";
+import { issueToken, consumeToken } from "../services/userTokens.js";
+import { sendPasswordReset, sendVerifyEmail } from "../services/emailTemplates.js";
 
 const router = Router();
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: config.isTest ? 10000 : 40, standardHeaders: true, legacyHeaders: false, message: { error: { status: 429, message: "Too many attempts. Please wait a few minutes and try again." } } });
@@ -34,7 +36,7 @@ function createUser(body, role) {
 }
 
 router.post("/register/customer", authLimiter, validate(registerSchema), wrap((req, res) => {
-  const user = tx(() => { const u = createUser(req.body, "buyer"); return u; });
+  const user = tx(() => { const u = createUser(req.body, "buyer"); sendVerifyEmail(u, issueToken(u.id, "email_verify", 60 * 48)); return u; });
   req.user = user;
   audit(req, "auth.register", "user", user.id, { role: "buyer" });
   setAuthCookie(res, user);
@@ -45,6 +47,7 @@ router.post("/register/seller", authLimiter, validate(registerSchema), wrap((req
   const user = tx(() => {
     const u = createUser(req.body, "seller");
     run("INSERT INTO seller_applications (user_id, status, data) VALUES (?, 'draft', ?)", u.id, JSON.stringify({}));
+    sendVerifyEmail(u, issueToken(u.id, "email_verify", 60 * 48));
     return u;
   });
   req.user = user;
@@ -90,8 +93,42 @@ router.patch("/me", requireAuth, validate(z.object({ firstName: str(1, 60).optio
 
 router.post("/change-password", requireAuth, validate(z.object({ currentPassword: z.string().min(1), newPassword: password })), wrap((req, res) => {
   if (!bcrypt.compareSync(req.body.currentPassword, req.user.password_hash)) throw badRequest("Current password is incorrect", { fields: { currentPassword: "Incorrect password" } });
-  run("UPDATE users SET password_hash=? WHERE id=?", bcrypt.hashSync(req.body.newPassword, 10), req.user.id);
+  run("UPDATE users SET password_hash=?, sessions_valid_after=datetime('now') WHERE id=?", bcrypt.hashSync(req.body.newPassword, 10), req.user.id);
   audit(req, "auth.password_changed", "user", req.user.id);
+  setAuthCookie(res, req.user); // keep this device signed in; all other sessions are revoked
+  res.json({ ok: true });
+}));
+
+/* ---- forgot / reset password (always answers 200 so accounts cannot be enumerated) ---- */
+const resetLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: config.isTest ? 10000 : 8, standardHeaders: true, legacyHeaders: false, message: { error: { status: 429, message: "Too many requests. Please wait and try again." } } });
+router.post("/forgot-password", resetLimiter, validate(z.object({ email })), wrap((req, res) => {
+  const user = one("SELECT * FROM users WHERE email = ? AND status='active'", req.body.email);
+  if (user) tx(() => { sendPasswordReset(user, issueToken(user.id, "password_reset", 60)); audit(req, "auth.password_reset_requested", "user", user.id); });
+  res.json({ ok: true, message: "If an account exists for that email, a reset link is on its way." });
+}));
+
+router.post("/reset-password", resetLimiter, validate(z.object({ token: z.string().min(20).max(200), newPassword: password })), wrap((req, res) => {
+  const userId = tx(() => {
+    const id = consumeToken(req.body.token, "password_reset");
+    if (!id) return null;
+    run("UPDATE users SET password_hash=?, failed_logins=0, locked_until=NULL, email_verified=1, sessions_valid_after=datetime('now') WHERE id=?", bcrypt.hashSync(req.body.newPassword, 10), id);
+    return id;
+  });
+  if (!userId) throw badRequest("This reset link is invalid or has expired. Please request a new one.");
+  req.user = one("SELECT * FROM users WHERE id=?", userId);
+  audit(req, "auth.password_reset", "user", userId);
+  res.json({ ok: true });
+}));
+
+/* ---- email verification ---- */
+router.post("/verify-email", resetLimiter, validate(z.object({ token: z.string().min(20).max(200) })), wrap((req, res) => {
+  const userId = tx(() => { const id = consumeToken(req.body.token, "email_verify"); if (id) run("UPDATE users SET email_verified=1 WHERE id=?", id); return id; });
+  if (!userId) throw badRequest("This confirmation link is invalid or has expired.");
+  res.json({ ok: true });
+}));
+
+router.post("/resend-verification", requireAuth, resetLimiter, wrap((req, res) => {
+  if (!req.user.email_verified) tx(() => sendVerifyEmail(req.user, issueToken(req.user.id, "email_verify", 60 * 48)));
   res.json({ ok: true });
 }));
 

@@ -104,6 +104,7 @@ export default function Track() {
           <p className="totals-line total"><span>Total</span><strong>{money(o.total)}</strong></p>
           <p><span>Delivery address</span><strong>{o.address.street}<br />{o.address.suburb}, {o.address.city} {o.address.postalCode}</strong></p>
           <p><span>Payment</span><strong>{niceStatus(o.paymentStatus)}</strong></p>
+          <Link className="secondary" to={`/invoice/${o.number}${email ? `?email=${encodeURIComponent(email)}` : ""}`}>View invoice</Link>
           {canCancel && <button className="danger" disabled={busy} onClick={() => confirm("Cancel this order?") && act(() => api.post(`/orders/${o.number}/transitions`, { to: "cancelled" }), "Order cancelled")} type="button">Cancel order</button>}
           {user && o.status === "delivered" && !showRefund && <button onClick={() => setShowRefund(true)} type="button">Request a refund</button>}
           {showRefund && (

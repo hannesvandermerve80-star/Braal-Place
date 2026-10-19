@@ -23,7 +23,23 @@ export const config = {
   clientOrigins: (env.CLIENT_ORIGIN || "http://localhost:5173").split(",").map((s) => s.trim()),
   databaseFile: env.DATABASE_FILE === ":memory:" ? ":memory:" : path.resolve(SERVER_ROOT, env.DATABASE_FILE || "data/bekies.db"),
   uploadDir: path.resolve(SERVER_ROOT, env.UPLOAD_DIR || "uploads"),
+  get paymentProvider() { return this.payfast ? "payfast" : (this.demoMode || !this.isProd) ? "demo" : "none"; },
   demoMode: (env.DEMO_MODE ?? "true") === "true",
+  publicUrl: (env.PUBLIC_URL || (env.CLIENT_ORIGIN || "http://localhost:5173").split(",")[0]).trim().replace(/\/$/, ""),
+  smtp: env.SMTP_HOST ? {
+    host: env.SMTP_HOST,
+    port: Number(env.SMTP_PORT || 587),
+    secure: (env.SMTP_SECURE ?? "false") === "true",
+    user: env.SMTP_USER || undefined,
+    pass: env.SMTP_PASS || undefined,
+    from: env.MAIL_FROM || env.SMTP_USER || "Bekies Braai Place <no-reply@bekiesbraaiplace.co.za>",
+  } : null,
+  payfast: env.PAYFAST_MERCHANT_ID ? {
+    merchantId: env.PAYFAST_MERCHANT_ID,
+    merchantKey: env.PAYFAST_MERCHANT_KEY,
+    passphrase: env.PAYFAST_PASSPHRASE || "",
+    sandbox: (env.PAYFAST_SANDBOX ?? "true") === "true",
+  } : null,
   clientDist: path.resolve(SERVER_ROOT, "../client/dist"),
   commerce: {
     freeDeliveryThresholdCents: 75000,

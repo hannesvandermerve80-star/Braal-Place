@@ -48,7 +48,7 @@ export const qs = (params: Record<string, string | number | boolean | undefined 
 /* ------------------------------------------------------------------ types */
 export type Role = "admin" | "manager" | "seller" | "buyer";
 export interface User {
-  id: number; email: string; firstName: string; lastName: string; mobile: string | null; role: Role;
+  id: number; email: string; firstName: string; lastName: string; mobile: string | null; emailVerified?: boolean; role: Role;
   permissions: string[]; rewardsPoints: number; store: { id: number; slug: string; name: string; status: string } | null;
 }
 export interface Product {
@@ -82,7 +82,7 @@ export interface Application {
   representative?: { firstName: string; lastName: string; email: string; mobile: string };
   history?: { from: string | null; to: string; note: string | null; at: string; actor: string }[];
 }
-export interface SiteMeta { brand: { name: string; supportEmail: string; supportPhone: string }; freeDeliveryThreshold: number; deliveryFee: number; demoMode: boolean; demoAccounts: { role: Role; label: string; email: string; password: string }[] }
+export interface SiteMeta { brand: { name: string; supportEmail: string; supportPhone: string }; freeDeliveryThreshold: number; deliveryFee: number; demoMode: boolean; paymentProvider?: "demo" | "payfast" | "none"; emailEnabled?: boolean; demoAccounts: { role: Role; label: string; email: string; password: string }[] }
 
 export const money = (v: number) => `R${v.toLocaleString("en-ZA", { minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 })}`;
 export const niceStatus = (s: string) => s.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
